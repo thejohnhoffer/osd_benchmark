@@ -4,7 +4,8 @@ const runTests = (sketches) => {
   //const in_w = sketches[0].canvas.width;
   //const in_h = sketches[0].canvas.height;
   var suite = new Benchmark.Suite;
-  var counter = 0;
+  var cache = {'age': Infinity};
+  var sketchStart = 0;
 
   // For WebGL
   var via = new ViaWebGL('g', N);
@@ -17,29 +18,53 @@ const runTests = (sketches) => {
   var out_w = c.width;
 
   const selectPixels = key => {
-    let start = counter % (sketches.length - N)
-    counter += N
+    let start = sketchStart % (sketches.length - N);
+    sketchStart += N;
 
     return sketches.slice(start, start + N).map(s => {
       return s[key];
     });
   }
+  const updateCache = () => {
+    // Never update cache
+    if (cache.age < Infinity) {
+      cache.age += 1;
+      return;
+    } 
+    cache = {
+      'canvas': selectPixels('canvas'),
+      'data': selectPixels('data'),
+      'age': 1
+    }
+  }
 
   // add tests
   suite
-  .add('webgl', function() {
+  .add('webgl', {
+    "defer": true,
+    "fn": function(deferred) {
+      updateCache(); 
+      via.gl.clear(via.gl.COLOR_BUFFER_BIT);
 
-    via.gl.clear(via.gl.COLOR_BUFFER_BIT);
-
-    via.loadImages(selectPixels('data'));
+      // If recently cached
+      if (cache.age == 1) {
+        via.loadImages(cache.data);
+      }
+      via.gl.drawArrays(via.gl.TRIANGLE_STRIP, 0, 4);
+      window.requestAnimationFrame(deferred.resolve.bind(deferred));
+    }
   })
-  .add('canvas', function() {
+  .add('canvas', {
+    "defer": true,
+    "fn": function(deferred) {
+      updateCache(); 
+      ctx.clearRect(0, 0, out_w, out_h);
 
-    ctx.clearRect(0, 0, out_w, out_h);
-
-    selectPixels('canvas').map(image => {
-        ctx.drawImage(image, 0, 0, out_w, out_h);
-    });
+      cache.canvas.map(image => {
+          ctx.drawImage(image, 0, 0, out_w, out_h);
+      });
+      window.requestAnimationFrame(deferred.resolve.bind(deferred));
+    }
   })
 
   // add listeners
@@ -212,8 +237,8 @@ ViaWebGL.prototype = {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     });
 
   },
@@ -230,9 +255,6 @@ ViaWebGL.prototype = {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
                     gl.RGBA, gl.UNSIGNED_BYTE, img);
     });
-
-    // Draw four points
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
 
