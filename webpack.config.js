@@ -9,8 +9,6 @@ module.exports = {
     mode: 'production',
     entry: [
       './index.js',
-      'webpack/hot/only-dev-server',
-      'webpack-dev-server/client?http://0.0.0.0:8487'
     ],
     module: {
       rules: [

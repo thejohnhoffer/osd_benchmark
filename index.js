@@ -1,37 +1,41 @@
-window.onload = function() {
+const runTests = (sketches) => {
   var suite = new Benchmark.Suite;
-  var layers = document.getElementById("layers");
-  var images = Array.from(layers.children);
-  var counters = [0, 0];
+  var counter = 0;
+  const N = 1
 
   // For WebGL
-  var via = new ViaWebGL('g', 1);
+  var via = new ViaWebGL('g', N);
   // For Canvas
   var c = document.getElementById('c');
   var ctx = c.getContext('2d');  
+  ctx.globalCompositeOperation = 'lighter';
   var h = c.height;
   var w = c.width;
+
+  const selectPixels = key => {
+    let start = counter % (sketches.length - N)
+    counter += N 
+
+    return sketches.slice(start, start + N).map(s => {
+      return s[key];
+    });
+  }
 
   // add tests
   suite
   .add('webgl', function() {
 
-    var webglImage = images[counters[0] % images.length];
     via.gl.clear(via.gl.COLOR_BUFFER_BIT);
 
-    via.loadImages([webglImage]);
-    counters[0] += 1;
+    via.loadImages(selectPixels('array'));
   })
   .add('canvas', function() {
 
-    var canvasImage = images[counters[1] % images.length];
-    ctx.globalCompositeOperation = 'lighter';
     ctx.clearRect(0, 0, w, h);
 
-    [canvasImage].map(image => {
+    selectPixels('canvas').map(image => {
         ctx.drawImage(image, 0, 0, w, h);
     });
-    counters[1] += 1;
   })
 
   // add listeners
@@ -52,6 +56,34 @@ window.onload = function() {
   // run async
   .run({ 'async': true });
 }
+
+const requestImage = i => {
+  return new Promise((resolve, reject) => {
+    let img = new Image;
+    img.onload = function() {
+      let w = this.width;
+      let h = this.height;
+      let canvas = document.createElement('canvas');
+      let context = canvas.getContext('2d');
+      canvas.height = h;
+      canvas.width = w;
+      context.drawImage(img, 0, 0);
+      resolve({
+        'canvas': canvas,
+        'array': context.getImageData(0, 0, w, h)
+      });
+    }
+    img.src = 'images/' + i + '.png';
+  });
+}
+
+window.onload = () => {
+  const rangeImages = [...Array(50).keys()];
+  const requests = rangeImages.map(requestImage);
+  Promise.all(requests).then(runTests).catch(err => {
+      console.error(err.message);
+  });
+};
 
 var ViaWebGL = function(id, nTexture) {
   var rangeTexture = [...Array(nTexture).keys()];
@@ -186,10 +218,8 @@ ViaWebGL.prototype = {
 
     // Bind Texture for GLSL
     imgs.forEach((img, i) => {
-      var unit = this.units[i];
       var texture = this.textures[i];
 
-      gl.activeTexture(unit)
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
