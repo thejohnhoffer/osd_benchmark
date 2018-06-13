@@ -1,11 +1,11 @@
 window.onload = function() {
   var suite = new Benchmark.Suite;
   var layers = document.getElementById("layers");
-  var images = Array.from(layers.children).slice(0, 2);
-  var counter = 0;
+  var images = Array.from(layers.children);
+  var counters = [0, 0];
 
   // For WebGL
-  var via = new ViaWebGL('g', 2);
+  var via = new ViaWebGL('g', 1);
   // For Canvas
   var c = document.getElementById('c');
   var ctx = c.getContext('2d');  
@@ -15,17 +15,22 @@ window.onload = function() {
   // add tests
   suite.add('webgl', function() {
 
+    var webglImage = images[counters[0] % images.length];
     via.gl.clear(via.gl.COLOR_BUFFER_BIT);
-    via.loadImages(images);
+
+    via.loadImages([webglImage]);
+    counters[0] += 1;
+    console.log(counters)
   })
   .add('canvas', function() {
 
-    ctx.clearRect(0, 0, w, h);
+    var canvasImage = images[counters[1] % images.length];
     ctx.globalCompositeOperation = 'lighter';
+    ctx.clearRect(0, 0, w, h);
 
-    images.forEach(function(image){
-        ctx.drawImage(image, 0, 0, w, h);
-    })
+    ctx.drawImage(canvasImage, 0, 0, w, h);
+    counters[1] += 1;
+    console.log(counters)
   })
   // add listeners
   .on('cycle', function(event) {
