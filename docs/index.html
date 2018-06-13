@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.10/lodash.min.js"></script>
+  <script src="benchmark.js" async defer></script>
+  <script src="bundle.js" async defer></script>
+  <meta charset="UTF-8">
+  <title>WebGL vs Canvas</title>
+</head>
+<body>
+  <h3 id="result">Testing...</h2>
+  <ul>
+      <li><span id="webgl_msg">...</span></li>
+      <li><span id="canvas_msg">...</span></li>
+  <ul>
+  <canvas id="g" width="200" height="200"></canvas>
+  <canvas id="c" width="200" height="200"></canvas>
+  <div id="layers" style="display:none;" >
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=0">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=1">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=2">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=3">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=4">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=5">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=6">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=7">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=8">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=9">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=10">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=11">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=12">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=13">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=14">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=15">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=16">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=17">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=18">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=19">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=20">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=21">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=22">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=23">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=24">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=25">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=26">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=27">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=28">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=29">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=30">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=31">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=32">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=33">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=34">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=35">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=36">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=37">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=38">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=39">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=40">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=41">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=42">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=43">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=44">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=45">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=46">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=47">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=48">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=49">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=50">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=51">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=52">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=53">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=54">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=55">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=56">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=57">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=58">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=59">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=60">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=61">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=62">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=63">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=64">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=65">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=66">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=67">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=68">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=69">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=70">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=71">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=72">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=73">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=74">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=75">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=76">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=77">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=78">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=79">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=80">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=81">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=82">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=83">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=84">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=85">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=86">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=87">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=88">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=89">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=90">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=91">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=92">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=93">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=94">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=95">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=96">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=97">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=98">
+    <img crossorigin="anonymous" alt="random" src="https://picsum.photos/300/300/?random&bustcache=99">
+  </div>
+</body>
+</html>

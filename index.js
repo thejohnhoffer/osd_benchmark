@@ -20,7 +20,6 @@ window.onload = function() {
 
     via.loadImages([webglImage]);
     counters[0] += 1;
-    console.log(counters)
   })
   .add('canvas', function() {
 
@@ -30,7 +29,6 @@ window.onload = function() {
 
     ctx.drawImage(canvasImage, 0, 0, w, h);
     counters[1] += 1;
-    console.log(counters)
   })
   // add listeners
   .on('cycle', function(event) {
