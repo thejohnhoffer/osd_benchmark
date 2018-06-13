@@ -1,20 +1,24 @@
+const N = 1;
+
 const runTests = (sketches) => {
+  //const in_w = sketches[0].canvas.width;
+  //const in_h = sketches[0].canvas.height;
   var suite = new Benchmark.Suite;
   var counter = 0;
-  const N = 1
 
   // For WebGL
   var via = new ViaWebGL('g', N);
+
   // For Canvas
   var c = document.getElementById('c');
-  var ctx = c.getContext('2d');  
+  var ctx = c.getContext('2d');
   ctx.globalCompositeOperation = 'lighter';
-  var h = c.height;
-  var w = c.width;
+  var out_h = c.height;
+  var out_w = c.width;
 
   const selectPixels = key => {
     let start = counter % (sketches.length - N)
-    counter += N 
+    counter += N
 
     return sketches.slice(start, start + N).map(s => {
       return s[key];
@@ -27,14 +31,14 @@ const runTests = (sketches) => {
 
     via.gl.clear(via.gl.COLOR_BUFFER_BIT);
 
-    via.loadImages(selectPixels('array'));
+    via.loadImages(selectPixels('data'));
   })
   .add('canvas', function() {
 
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0, 0, out_w, out_h);
 
     selectPixels('canvas').map(image => {
-        ctx.drawImage(image, 0, 0, w, h);
+        ctx.drawImage(image, 0, 0, out_w, out_h);
     });
   })
 
@@ -61,16 +65,17 @@ const requestImage = i => {
   return new Promise((resolve, reject) => {
     let img = new Image;
     img.onload = function() {
-      let w = this.width;
-      let h = this.height;
+      let in_w = this.width;
+      let in_h = this.height;
       let canvas = document.createElement('canvas');
       let context = canvas.getContext('2d');
-      canvas.height = h;
-      canvas.width = w;
+      context.globalAlpha = 1.0 / N;
+      canvas.height = in_h;
+      canvas.width = in_w;
       context.drawImage(img, 0, 0);
       resolve({
         'canvas': canvas,
-        'array': context.getImageData(0, 0, w, h)
+        'data': context.getImageData(0, 0, in_w, in_h)
       });
     }
     img.src = 'images/' + i + '.png';
@@ -98,7 +103,7 @@ var ViaWebGL = function(id, nTexture) {
   var g = document.getElementById(id);
   this.gl = g.getContext('webgl2');
   this.gl.viewport(0, 0, g.width, g.height);
-  
+
   this.textures = rangeTexture.map(this.gl.createTexture, this.gl);
   this.units = rangeTexture.map(i => this.gl['TEXTURE' + i]);
   this.buffer = this.gl.createBuffer();
@@ -117,7 +122,7 @@ in vec2 uv;
 uniform sampler2D u_tile`+ n +';'
   });
   // Implement shader functionality
-  fShader += ` 
+  fShader += `
 
 vec3 composite(vec3 target, vec4 source) {
   target += source.rgb * source.a;
@@ -147,7 +152,7 @@ out vec2 uv;
 void main() {
   uv = a_uv;
   vec2 full_pos = 2. * a_uv - 1.;
-  gl_Position = vec4(full_pos, 0., 1.);  
+  gl_Position = vec4(full_pos, 0., 1.);
 }
 `;
 
@@ -184,7 +189,7 @@ ViaWebGL.prototype = {
     var gl = this.gl;
     gl.useProgram(program);
     var a_uv = gl.getAttribLocation(program, 'a_uv');
-    
+
     // Assign vertex inputs
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.points_buffer, gl.STATIC_DRAW);
