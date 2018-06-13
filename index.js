@@ -13,14 +13,7 @@ window.onload = function() {
   var w = c.width;
 
   // add tests
-  suite.add('webgl', function() {
-
-    var webglImage = images[counters[0] % images.length];
-    via.gl.clear(via.gl.COLOR_BUFFER_BIT);
-
-    via.loadImages([webglImage]);
-    counters[0] += 1;
-  })
+  suite
   .add('canvas', function() {
 
     var canvasImage = images[counters[1] % images.length];
@@ -30,6 +23,15 @@ window.onload = function() {
     ctx.drawImage(canvasImage, 0, 0, w, h);
     counters[1] += 1;
   })
+  .add('webgl', function() {
+
+    var webglImage = images[counters[0] % images.length];
+    via.gl.clear(via.gl.COLOR_BUFFER_BIT);
+
+    via.loadImages([webglImage]);
+    counters[0] += 1;
+  })
+
   // add listeners
   .on('cycle', function(event) {
     if (event.target.aborted) {
