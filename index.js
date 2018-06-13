@@ -14,15 +14,6 @@ window.onload = function() {
 
   // add tests
   suite
-  .add('canvas', function() {
-
-    var canvasImage = images[counters[1] % images.length];
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.drawImage(canvasImage, 0, 0, w, h);
-    counters[1] += 1;
-  })
   .add('webgl', function() {
 
     var webglImage = images[counters[0] % images.length];
@@ -30,6 +21,17 @@ window.onload = function() {
 
     via.loadImages([webglImage]);
     counters[0] += 1;
+  })
+  .add('canvas', function() {
+
+    var canvasImage = images[counters[1] % images.length];
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.clearRect(0, 0, w, h);
+
+    [canvasImage].map(image => {
+        ctx.drawImage(image, 0, 0, w, h);
+    });
+    counters[1] += 1;
   })
 
   // add listeners
