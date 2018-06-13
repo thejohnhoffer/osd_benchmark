@@ -13,10 +13,6 @@ module.exports = {
       'webpack-dev-server/client?http://0.0.0.0:8487'
     ],
     module: {
-      noParse: [
-        // https://github.com/bestiejs/benchmark.js/issues/128
-        /benchmark/
-      ],
       rules: [
         {
           test: /\.js$/,
@@ -39,6 +35,9 @@ module.exports = {
         new CopyWebpackPlugin([{
             from: 'index.html',
             to: 'index.html'
+        },{
+            from: 'benchmark.js',
+            to: 'benchmark.js'
         }]),
         new Dotenv()
     ],
