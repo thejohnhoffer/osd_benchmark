@@ -1,8 +1,11 @@
 window.onload = function() {
   var suite = new Benchmark.Suite;
+  var layers = document.getElementById("layers");
+  var images = Array.from(layers.children).slice(0, 2);
+  var counter = 0;
 
   // For WebGL
-  var via = new ViaWebGL('g');
+  var via = new ViaWebGL('g', 2);
   // For Canvas
   var c = document.getElementById('c');
   var ctx = c.getContext('2d');  
@@ -13,8 +16,6 @@ window.onload = function() {
   suite.add('webgl', function() {
 
     via.gl.clear(via.gl.COLOR_BUFFER_BIT);
-    var layers = document.getElementById("layers");
-    var images = Array.from(layers.children);
     via.loadImages(images);
   })
   .add('canvas', function() {
@@ -22,8 +23,6 @@ window.onload = function() {
     ctx.clearRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'lighter';
 
-    var layers = document.getElementById("layers");
-    var images = Array.from(layers.children);
     images.forEach(function(image){
         ctx.drawImage(image, 0, 0, w, h);
     })
@@ -47,7 +46,8 @@ window.onload = function() {
   .run({ 'async': true });
 }
 
-var ViaWebGL = function(id) {
+var ViaWebGL = function(id, nTexture) {
+  var rangeTexture = [...Array(nTexture).keys()];
   // Define vertex input buffer
   this.one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
   this.points_list_size = 4 * this.one_point_size;
@@ -59,30 +59,47 @@ var ViaWebGL = function(id) {
   var g = document.getElementById(id);
   this.gl = g.getContext('webgl2');
   this.gl.viewport(0, 0, g.width, g.height);
-  this.textures = [0, 1].map(this.gl.createTexture, this.gl);
-  this.units = [this.gl.TEXTURE0, this.gl.TEXTURE1];
+  
+  this.textures = rangeTexture.map(this.gl.createTexture, this.gl);
+  this.units = rangeTexture.map(i => this.gl['TEXTURE' + i]);
   this.buffer = this.gl.createBuffer();
 
+  // Begin defining shader
   var fShader = `#version 300 es
 precision highp int;
 precision highp float;
 precision highp sampler2D;
-uniform sampler2D u_tile0;
-uniform sampler2D u_tile1;
-
-in vec2 uv;
 out vec4 fragcolor;
+in vec2 uv;
+`
+  // Add each texture sampler to shader
+  rangeTexture.forEach(n => {
+    fShader += `
+uniform sampler2D u_tile`+ n +';'
+  });
+  // Implement shader functionality
+  fShader += ` 
+
+vec3 composite(vec3 target, vec4 source) {
+  target += source.rgb * source.a;
+  return target;
+}
 
 void main() {
 
-  vec4 p0 = texture(u_tile0, uv);
-  vec4 p1 = texture(u_tile1, uv);
-  vec3 color = p0.rgb * p0.a;
-  color += p1.rgb * p1.a;
-
+  vec3 color = vec3(0, 0, 0);
+`
+  // Add each texture sampler to shader
+  rangeTexture.forEach(n => {
+    fShader += `
+  color = composite(color, texture(u_tile` + n + ', uv));'
+  });
+  // Return pixel in shader
+  fShader += `
   fragcolor = vec4(color, 1.0);
 }
 `;
+console.log('Fragment Shader' + fShader);
 
   var vShader = `#version 300 es
 in vec2 a_uv;
@@ -127,13 +144,7 @@ ViaWebGL.prototype = {
 
     var gl = this.gl;
     gl.useProgram(program);
-
-    // Get GLSL locations
     var a_uv = gl.getAttribLocation(program, 'a_uv');
-    var u_tile0 = gl.getUniformLocation(program, 'u_tile0');
-    var u_tile1 = gl.getUniformLocation(program, 'u_tile1');
-    gl.uniform1i(u_tile0, 0);
-    gl.uniform1i(u_tile1, 1);
     
     // Assign vertex inputs
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
@@ -145,9 +156,9 @@ ViaWebGL.prototype = {
                  0 * this.points_list_size)
 
     // Set Texture for GLSL
-    var textures = this.textures;
-    this.units.forEach(function(unit, i) {
-        var texture = textures[i]
+    this.units.forEach((unit, n) => {
+        var texture = this.textures[n]
+        gl.uniform1i(gl.getUniformLocation(program, 'u_tile' + n), n);
 
         gl.activeTexture(unit);
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -165,12 +176,11 @@ ViaWebGL.prototype = {
   loadImages: function(imgs) {
 
     var gl = this.gl;
-    var units = this.units;
-    var textures = this.textures;
 
-    imgs.forEach(function(img, i) {
-      var unit = units[i]
-      var texture = textures[i]
+    // Bind Texture for GLSL
+    imgs.forEach((img, i) => {
+      var unit = this.units[i];
+      var texture = this.textures[i];
 
       gl.activeTexture(unit)
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -181,8 +191,6 @@ ViaWebGL.prototype = {
 
     // Draw four points
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    return this.gl.canvas;
   }
 }
 
