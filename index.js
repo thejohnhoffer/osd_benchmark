@@ -1,14 +1,15 @@
-const N = 1;
+// Number of images per frame
+const N = 5;
 
 const runTests = (sketches) => {
   //const in_w = sketches[0].canvas.width;
   //const in_h = sketches[0].canvas.height;
   var suite = new Benchmark.Suite;
   var cache = {'age': Infinity};
-  var sketchStart = 0;
 
   // For WebGL
-  var via = new ViaWebGL('g', N);
+  var via0 = new ViaWebGL('g0', N);
+  var via1 = new ViaWebGL('g1', N);
 
   // For Canvas
   var c = document.getElementById('c');
@@ -18,10 +19,7 @@ const runTests = (sketches) => {
   var out_w = c.width;
 
   const selectPixels = key => {
-    let start = sketchStart % (sketches.length - N);
-    sketchStart += N;
-
-    return sketches.slice(start, start + N).map(s => {
+    return sketches.map(s => {
       return s[key];
     });
   }
@@ -40,18 +38,34 @@ const runTests = (sketches) => {
 
   // add tests
   suite
-  .add('webgl', {
+  .add('webgl_cache', {
     "defer": true,
     "fn": function(deferred) {
       updateCache(); 
-      via.gl.clear(via.gl.COLOR_BUFFER_BIT);
+      via0.gl.clear(via0.gl.COLOR_BUFFER_BIT);
 
-      // If recently cached
+      // When first cached
       if (cache.age == 1) {
-        via.loadImages(cache.data);
+        via0.loadImages(cache.data);
       }
-      via.gl.drawArrays(via.gl.TRIANGLE_STRIP, 0, 4);
-      window.requestAnimationFrame(deferred.resolve.bind(deferred));
+      via0.gl.drawArrays(via0.gl.TRIANGLE_STRIP, 0, 4);
+      // May not be faster than 60 fps
+      let resolve = deferred.resolve.bind(deferred);
+      window.requestAnimationFrame(resolve);
+    }
+  })
+  .add('webgl_rebind', {
+    "defer": true,
+    "fn": function(deferred) {
+      updateCache(); 
+      via1.gl.clear(via1.gl.COLOR_BUFFER_BIT);
+
+      // Ignore cache age
+      via1.loadImages(cache.data);
+      via1.gl.drawArrays(via1.gl.TRIANGLE_STRIP, 0, 4);
+      // May not be faster than 60 fps
+      let resolve = deferred.resolve.bind(deferred);
+      window.requestAnimationFrame(resolve);
     }
   })
   .add('canvas', {
@@ -63,7 +77,9 @@ const runTests = (sketches) => {
       cache.canvas.map(image => {
           ctx.drawImage(image, 0, 0, out_w, out_h);
       });
-      window.requestAnimationFrame(deferred.resolve.bind(deferred));
+      // May not be faster than 60 fps
+      let resolve = deferred.resolve.bind(deferred);
+      window.requestAnimationFrame(resolve);
     }
   })
 
@@ -74,7 +90,7 @@ const runTests = (sketches) => {
       return;
     }
     var name = event.target.name;
-    var el = document.getElementById(name+"_msg");
+    var el = document.getElementById(name);
     el.innerText = String(event.target);
   })
   .on('complete', function() {
@@ -94,7 +110,6 @@ const requestImage = i => {
       let in_h = this.height;
       let canvas = document.createElement('canvas');
       let context = canvas.getContext('2d');
-      context.globalAlpha = 1.0 / N;
       canvas.height = in_h;
       canvas.width = in_w;
       context.drawImage(img, 0, 0);
@@ -108,7 +123,7 @@ const requestImage = i => {
 }
 
 window.onload = () => {
-  const rangeImages = [...Array(50).keys()];
+  const rangeImages = [...Array(N).keys()];
   const requests = rangeImages.map(requestImage);
   Promise.all(requests).then(runTests).catch(err => {
       console.error(err.message);
