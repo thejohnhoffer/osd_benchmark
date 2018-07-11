@@ -4,7 +4,7 @@ const N = 2;
 const runTests = (sketches) => {
   //const in_w = sketches[0].canvas.width;
   //const in_h = sketches[0].canvas.height;
-  var suite = new Benchmark.Suite;
+  var suite = new Benchmark.Suite();
   var cache = {'age': Infinity};
 
   // For WebGL
@@ -42,12 +42,11 @@ const runTests = (sketches) => {
   })
   // run async
   .run({ 'async': true });
-}
-
+};
 
 const requestImage = i => {
   return new Promise((resolve, reject) => {
-    let img = new Image;
+    let img = new Image();
     img.onload = function() {
       let in_w = this.width;
       let in_h = this.height;
@@ -58,10 +57,10 @@ const requestImage = i => {
       context.drawImage(img, 0, 0);
       // Return image data object
       resolve(context.getImageData(0, 0, in_w, in_h));
-    }
+    };
     img.src = 'images/' + i + '.png';
   });
-}
+};
 
 window.onload = () => {
   const rangeImages = [...Array(N).keys()];
@@ -96,11 +95,11 @@ precision highp float;
 precision highp sampler2D;
 out vec4 fragcolor;
 in vec2 uv;
-`
+`;
   // Add each texture sampler to shader
   rangeTexture.forEach(n => {
     fShader += `
-uniform sampler2D u_tile`+ n +';'
+uniform sampler2D u_tile`+ n +';';
   });
   // Implement shader functionality
   fShader += `
@@ -113,11 +112,11 @@ vec3 composite(vec3 target, vec4 source) {
 void main() {
 
   vec3 color = vec3(0, 0, 0);
-`
+`;
   // Add each texture sampler to shader
   rangeTexture.forEach(n => {
     fShader += `
-  color = composite(color, texture(u_tile` + n + ', uv));'
+  color = composite(color, texture(u_tile` + n + ', uv));';
   });
   // Return pixel in shader
   fShader += `
@@ -178,11 +177,11 @@ ViaWebGL.prototype = {
     // Enable vertex buffer
     gl.enableVertexAttribArray(a_uv);
     gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, 0, this.one_point_size,
-                 0 * this.points_list_size)
+                 0 * this.points_list_size);
 
     // Set Texture for GLSL
     this.units.forEach((unit, n) => {
-        var texture = this.textures[n]
+        var texture = this.textures[n];
         gl.uniform1i(gl.getUniformLocation(program, 'u_tile' + n), n);
 
         gl.activeTexture(unit);
@@ -212,5 +211,5 @@ ViaWebGL.prototype = {
                     gl.RGBA, gl.UNSIGNED_BYTE, img);
     });
   }
-}
+};
 
