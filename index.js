@@ -2,10 +2,7 @@
 const N = 2;
 
 const runTests = (sketches) => {
-  //const in_w = sketches[0].canvas.width;
-  //const in_h = sketches[0].canvas.height;
   var suite = new Benchmark.Suite();
-  var cache = {'age': Infinity};
 
   // For WebGL
   var via = new ViaWebGL('g0', N);
