@@ -17,8 +17,7 @@
     "url": "https://github.com/thejohnhoffer/osd_benchmark/issues"
   },
   "homepage": "https://github.com/thejohnhoffer/osd_benchmark",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.4",
@@ -31,7 +30,7 @@
   },
   "scripts": {
     "build": "webpack",
-    "start": "webpack-dev-server --port 8487 --config ./webpack.config.js --mode development",
+    "start": "webpack-dev-server --host 0.0.0.0 --port 8487 --config ./webpack.config.js --mode development",
     "clean": "rm -rf docs"
   },
   "browserslist": [

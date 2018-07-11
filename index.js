@@ -1,5 +1,5 @@
 // Number of images per frame
-const N = 5;
+const N = 2;
 
 const runTests = (sketches) => {
   //const in_w = sketches[0].canvas.width;
@@ -8,81 +8,23 @@ const runTests = (sketches) => {
   var cache = {'age': Infinity};
 
   // For WebGL
-  var via0 = new ViaWebGL('g0', N);
-  var via1 = new ViaWebGL('g1', N);
-
-  // For Canvas
-  var c = document.getElementById('c');
-  var ctx = c.getContext('2d');
-  ctx.globalCompositeOperation = 'lighter';
-  var out_h = c.height;
-  var out_w = c.width;
-
-  const selectPixels = key => {
-    return sketches.map(s => {
-      return s[key];
-    });
-  }
-  const updateCache = () => {
-    // Never update cache
-    if (cache.age < Infinity) {
-      cache.age += 1;
-      return;
-    } 
-    cache = {
-      'canvas': selectPixels('canvas'),
-      'data': selectPixels('data'),
-      'age': 1
-    }
-  }
+  var via = new ViaWebGL('g0', N);
 
   // add tests
   suite
-  .add('webgl_cache', {
+  .add('gldrawer', {
     "defer": true,
     "fn": function(deferred) {
-      updateCache(); 
-      via0.gl.clear(via0.gl.COLOR_BUFFER_BIT);
-
-      // When first cached
-      if (cache.age == 1) {
-        via0.loadImages(cache.data);
-      }
-      via0.gl.drawArrays(via0.gl.TRIANGLE_STRIP, 0, 4);
-      // May not be faster than 60 fps
-      let resolve = deferred.resolve.bind(deferred);
-      window.requestAnimationFrame(resolve);
-    }
-  })
-  .add('webgl_rebind', {
-    "defer": true,
-    "fn": function(deferred) {
-      updateCache(); 
-      via1.gl.clear(via1.gl.COLOR_BUFFER_BIT);
+      via.gl.clear(via.gl.COLOR_BUFFER_BIT);
 
       // Ignore cache age
-      via1.loadImages(cache.data);
-      via1.gl.drawArrays(via1.gl.TRIANGLE_STRIP, 0, 4);
+      via.loadImages(sketches);
+      via.gl.drawArrays(via.gl.TRIANGLE_STRIP, 0, 4);
       // May not be faster than 60 fps
       let resolve = deferred.resolve.bind(deferred);
       window.requestAnimationFrame(resolve);
     }
   })
-  .add('canvas', {
-    "defer": true,
-    "fn": function(deferred) {
-      updateCache(); 
-      ctx.clearRect(0, 0, out_w, out_h);
-
-      cache.canvas.map(image => {
-          ctx.drawImage(image, 0, 0, out_w, out_h);
-      });
-      // May not be faster than 60 fps
-      let resolve = deferred.resolve.bind(deferred);
-      window.requestAnimationFrame(resolve);
-    }
-  })
-
   // add listeners
   .on('cycle', function(event) {
     if (event.target.aborted) {
@@ -102,6 +44,7 @@ const runTests = (sketches) => {
   .run({ 'async': true });
 }
 
+
 const requestImage = i => {
   return new Promise((resolve, reject) => {
     let img = new Image;
@@ -113,10 +56,8 @@ const requestImage = i => {
       canvas.height = in_h;
       canvas.width = in_w;
       context.drawImage(img, 0, 0);
-      resolve({
-        'canvas': canvas,
-        'data': context.getImageData(0, 0, in_w, in_h)
-      });
+      // Return image data object
+      resolve(context.getImageData(0, 0, in_w, in_h));
     }
     img.src = 'images/' + i + '.png';
   });
