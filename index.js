@@ -64,13 +64,13 @@ window.onload = () => {
   Promise.all(requests).then(runTests);
 };
 
-const Builder = function(gl, n) {
+const Shader = function(gl, n) {
   this.range = [...Array(this.n).keys()];
   this.gl = gl;
   this.n = n;
 };
 
-Builder.prototype = {
+Shader.prototype = {
   tileN: function(n) {
     return 'u_tile' + n;
   },
@@ -189,8 +189,8 @@ var ViaWebGL = function(id, nTexture) {
   this.buffer = this.gl.createBuffer();
 
   // Make shaders
-  var builder = new Builder(this.gl, nTexture);
-  this.toBuffers(builder.program);
+  var shader = new Shader(this.gl, nTexture);
+  this.toBuffers(shader.program);
 };
 
 ViaWebGL.prototype = {
