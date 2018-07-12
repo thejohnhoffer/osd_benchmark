@@ -1,5 +1,5 @@
 // Number of images per frame
-const N = 2;
+const N = 1;
 
 const runTests = (sketches) => {
   var suite = new Benchmark.Suite();
@@ -14,7 +14,6 @@ const runTests = (sketches) => {
     "fn": function(deferred) {
       via.gl.clear(via.gl.COLOR_BUFFER_BIT);
 
-      // Ignore cache age
       via.loadImages(sketches);
       via.gl.drawArrays(via.gl.TRIANGLE_STRIP, 0, 4);
       // May not be faster than 60 fps
@@ -62,13 +61,116 @@ const requestImage = i => {
 window.onload = () => {
   const rangeImages = [...Array(N).keys()];
   const requests = rangeImages.map(requestImage);
-  Promise.all(requests).then(runTests).catch(err => {
-      console.error(err.message);
-  });
+  Promise.all(requests).then(runTests);
+};
+
+const Builder = function(gl, n) {
+  this.range = [...Array(this.n).keys()];
+  this.gl = gl;
+  this.n = n;
+};
+
+Builder.prototype = {
+  tileN: function(n) {
+    return 'u_tile' + n;
+  },
+
+  get samplers () {
+    const doOne = function(n) {
+      return 'uniform sampler2D ' + this.tileN(n);
+    };
+    return this.range.map(doOne, this).join(';\n') + ';';
+  },
+
+  get call_composite () {
+    const doOne = function(n) {
+      const params = this.tileN(n) + ', uv';
+      return 'color = composite(color, texture(' + params + '))';
+    };
+    return this.range.map(doOne, this).join(';\n') + ';';
+  },
+  
+  get header () {
+  return `#version 300 es
+precision highp int;
+precision highp float;
+precision highp sampler2D;
+out vec4 fragcolor;
+in vec2 uv;
+` + this.samplers;
+  },
+
+  get composite () {
+     return `
+vec3 composite(vec3 target, vec4 source) {
+  target += source.rgb * source.a;
+  return target;
+}
+`; 
+  },
+
+  get main () {
+  
+    return `
+void main() {
+
+  vec3 color = vec3(0, 0, 0);
+` + this.call_composite + `
+  fragcolor = vec4(color, 1.0);
+}
+`;
+  },
+
+  get vertex () {
+    return `#version 300 es
+in vec2 a_uv;
+out vec2 uv;
+
+void main() {
+  uv = a_uv;
+  vec2 full_pos = 2. * a_uv - 1.;
+  gl_Position = vec4(full_pos, 0., 1.);
+}
+`;
+  },
+
+  get fragment () {
+
+    // Begin defining shader
+    const fShader = this.header + this.composite + this.main;
+
+    console.log('Fragment Shader' + fShader);
+    return fShader;
+  },
+
+  get program () {
+    const gl = this.gl;
+    const p = gl.createProgram();
+
+    this.compile(p, gl.VERTEX_SHADER, this.vertex);
+    this.compile(p, gl.FRAGMENT_SHADER, this.fragment);
+
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)){
+      console.log(gl.getProgramInfoLog(p));
+    }
+    return p;
+  },
+
+  compile: function(p, type, file) {
+    const gl = this.gl;
+    const shader =  gl.createShader(type);
+
+    gl.shaderSource(shader, file);
+    gl.compileShader(shader);
+    gl.attachShader(p, shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+      console.log(gl.getShaderInfoLog(shader));
+    }
+  }
 };
 
 var ViaWebGL = function(id, nTexture) {
-  var rangeTexture = [...Array(nTexture).keys()];
   // Define vertex input buffer
   this.one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
   this.points_list_size = 4 * this.one_point_size;
@@ -81,84 +183,17 @@ var ViaWebGL = function(id, nTexture) {
   this.gl = g.getContext('webgl2');
   this.gl.viewport(0, 0, g.width, g.height);
 
+  const rangeTexture = [...Array(this.n).keys()];
   this.textures = rangeTexture.map(this.gl.createTexture, this.gl);
   this.units = rangeTexture.map(i => this.gl['TEXTURE' + i]);
   this.buffer = this.gl.createBuffer();
 
-  // Begin defining shader
-  var fShader = `#version 300 es
-precision highp int;
-precision highp float;
-precision highp sampler2D;
-out vec4 fragcolor;
-in vec2 uv;
-`;
-  // Add each texture sampler to shader
-  rangeTexture.forEach(n => {
-    fShader += `
-uniform sampler2D u_tile`+ n +';';
-  });
-  // Implement shader functionality
-  fShader += `
-
-vec3 composite(vec3 target, vec4 source) {
-  target += source.rgb * source.a;
-  return target;
-}
-
-void main() {
-
-  vec3 color = vec3(0, 0, 0);
-`;
-  // Add each texture sampler to shader
-  rangeTexture.forEach(n => {
-    fShader += `
-  color = composite(color, texture(u_tile` + n + ', uv));';
-  });
-  // Return pixel in shader
-  fShader += `
-  fragcolor = vec4(color, 1.0);
-}
-`;
-console.log('Fragment Shader' + fShader);
-
-  var vShader = `#version 300 es
-in vec2 a_uv;
-out vec2 uv;
-
-void main() {
-  uv = a_uv;
-  vec2 full_pos = 2. * a_uv - 1.;
-  gl_Position = vec4(full_pos, 0., 1.);
-}
-`;
-
-this.toBuffers(this.toProgram([vShader, fShader]));
+  // Make shaders
+  var builder = new Builder(this.gl, nTexture);
+  this.toBuffers(builder.program);
 };
 
 ViaWebGL.prototype = {
-
-  // Link shaders from strings
-  toProgram: function(files) {
-    var gl = this.gl;
-    var program = gl.createProgram();
-    // 1st is vertex; 2nd is fragment
-    files.map(function(given,i) {
-      var sh = ['VERTEX_SHADER', 'FRAGMENT_SHADER'][i];
-      var shader = gl.createShader(gl[sh]);
-      gl.shaderSource(shader, given);
-      gl.compileShader(shader);
-      gl.attachShader(program, shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-        console.log(gl.getShaderInfoLog(shader));
-      }
-    });
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)){
-      console.log(gl.getProgramInfoLog(program));
-    }
-    return program;
-  },
 
   // Load data to the buffers
   toBuffers: function(program) {
